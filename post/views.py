@@ -46,7 +46,7 @@ def post_detail(request, post, year, month, day):
     form = CommentForm()
 
     post_tags_id = post.tags.values_list('id', flat=True)
-    similar_posts = Post.published.filter(taga__in=post_tags_id).exclude(id=post.id)
+    similar_posts = Post.published.filter(tags__in=post_tags_id).exclude(id=post.id)
     similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', 'publish')[:4]
 
     return render(request, 'post/detail.html', {'post':post, 'comments':comments, 'form':form, 'similar_posts':similar_posts})
