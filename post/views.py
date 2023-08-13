@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
+from django.db.models import Count
 from django.core.mail import send_mail
 
 from blog import settings  
@@ -43,7 +44,12 @@ def post_detail(request, post, year, month, day):
     post = get_object_or_404(Post, status=Post.Status.PUBLISHED, slug=post, publish__year=year, publish__month=month, publish__day=day)
     comments = post.post_comment.filter(active=True)
     form = CommentForm()
-    return render(request, 'post/detail.html', {'post':post, 'comments':comments, 'form':form})
+
+    post_tags_id = post.tags.values_list('id', flat=True)
+    similar_posts = Post.published.filter(taga__in=post_tags_id).exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', 'publish')[:4]
+
+    return render(request, 'post/detail.html', {'post':post, 'comments':comments, 'form':form, 'similar_posts':similar_posts})
 
 def post_share(request, post_id):
     post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
